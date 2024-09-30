@@ -8,7 +8,9 @@ const app = express();
 app.use(cors())
 app.use(express.json());
 app.use("/user", userRoutes);
-
+app.get("/",(req,res)=>{
+  res.send({msg:"server is running"})
+})
 const start = async () => {
   try {
     await connectDB(process.env.MONGO_URI);
