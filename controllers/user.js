@@ -1,5 +1,5 @@
 const jwt = require("jsonwebtoken");
-const User = require("../model/User");
+const User = require("../model/user");
 const { ACCESS_TOKEN_SECRET, REFRESH_TOKEN_SECRET } = process.env;
 
 // Generate tokens
