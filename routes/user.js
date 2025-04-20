@@ -9,7 +9,7 @@ const {
 } = require("../controllers/user");
 const router = express.Router();
 
-router.get("/:phoneNumber", authenticateToken, getUserByPhoneNumber);
+router.get("/:phoneNumber",  getUserByPhoneNumber);
 router.put("/report/:phoneNumber", authenticateToken, reportFraud);
 router.post("/add-multiple", authenticateToken, addMultipleUsers);
 router.post("/login", login);
