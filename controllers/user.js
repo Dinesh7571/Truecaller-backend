@@ -205,8 +205,8 @@ const addMultipleUsers = async (req, res) => {
       if (existingMap[phoneNumber]) {
         const user = existingMap[phoneNumber];
 
-        // Avoid duplicate names in possibleNames
-        if (name && !user.possibleNames.includes(name)) {
+        // Avoid duplicate names in possibleNames (case insensitive check)
+        if (name && !user.possibleNames.some(existingName => existingName.toLowerCase() === name.toLowerCase())) {
           bulkOps.push({
             updateOne: {
               filter: { phoneNumber },
@@ -241,6 +241,7 @@ const addMultipleUsers = async (req, res) => {
     return res.status(500).json({ error: "Server error", details: error.message });
   }
 };
+
 
 module.exports = {
   getUserByPhoneNumber,
