@@ -201,30 +201,35 @@ const addMultipleUsers = async (req, res) => {
     for (const incoming of usersData) {
       const { phoneNumber, name } = incoming;
 
+      if (!name) continue; // Skip if no name provided
+
       // If user exists
       if (existingMap[phoneNumber]) {
         const user = existingMap[phoneNumber];
 
         // Avoid duplicate names in possibleNames (case insensitive check)
-        if (name && !user.possibleNames.some(existingName => existingName.toLowerCase() === name.toLowerCase())) {
+        if (!user.possibleNames.some(existingName => existingName.toLowerCase() === name.toLowerCase())) {
           bulkOps.push({
             updateOne: {
               filter: { phoneNumber },
-              update: { $addToSet: { possibleNames: name } }, // $addToSet avoids duplicates
+              update: { $addToSet: { possibleNames: name } },
             },
           });
         }
       } else {
         // New user
-        const newUser = {
-          phoneNumber,
-          possibleNames: name ? [name] : [],
-        };
-
         bulkOps.push({
           updateOne: {
             filter: { phoneNumber },
-            update: { $set: newUser },
+            update: {
+              $setOnInsert: { 
+                phoneNumber,
+                fraudCount: 0,
+                isSpam: false,
+                __v: 0
+              },
+              $addToSet: { possibleNames: name }
+            },
             upsert: true,
           },
         });
@@ -241,7 +246,6 @@ const addMultipleUsers = async (req, res) => {
     return res.status(500).json({ error: "Server error", details: error.message });
   }
 };
-
 
 module.exports = {
   getUserByPhoneNumber,
