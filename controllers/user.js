@@ -147,6 +147,7 @@ const getUserByPhoneNumber = async (req, res) => {
 
     return res.json({
       message: "Top similar names (max 10)",
+       phoneNumber: user.phoneNumber,
       isSpam: user.isSpam,
       data: mostSimilarNames
     });
