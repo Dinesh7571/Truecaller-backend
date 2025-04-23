@@ -150,7 +150,8 @@ const getUserByPhoneNumber = async (req, res) => {
   phoneNumber: user.phoneNumber,
   isSpam: user.isSpam,
   name: mostSimilarNames[0]?.name || user.name,
-  mostSimilarNames: mostSimilarNames
+  mostSimilarNames: mostSimilarNames,
+      _id: user._id 
 });
 
   } catch (err) {
