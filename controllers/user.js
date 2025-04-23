@@ -145,12 +145,14 @@ const getUserByPhoneNumber = async (req, res) => {
     const possibleNames = user.possibleNames.length > 0 ? user.possibleNames : [user.name];
     const mostSimilarNames = getMostSimilarName(possibleNames);
 
-    return res.json({
-      message: "Top similar names (max 10)",
-       phoneNumber: user.phoneNumber,
-      isSpam: user.isSpam,
-      mostSimilarNames: mostSimilarNames
-    });
+   return res.json({
+  message: "Top similar names (max 10)",
+  phoneNumber: user.phoneNumber,
+  isSpam: user.isSpam,
+  name: mostSimilarNames[0]?.name || user.name,
+  mostSimilarNames: mostSimilarNames
+});
+
   } catch (err) {
     return res.status(500).json({ message: "Server error", error: err.message });
   }
