@@ -89,51 +89,64 @@ const reportFraud = async (req, res) => {
 
 const addMultipleUsers = async (req, res) => {
   try {
-    const usersData = req.body.users; // Expecting an array of user objects in the request body
+    const usersData = req.body.users; // [{ name: "", phoneNumber: "" }, ...]
 
     if (!Array.isArray(usersData)) {
-      return res
-        .status(400)
-        .json({ error: "Invalid input format. Expected an array of users." });
+      return res.status(400).json({ error: "Expected users array" });
     }
 
-    // Extract phone numbers and prepare bulk operations
-    const phoneNumbers = usersData.map((user) => user.phoneNumber);
-    const existingUsers = await User.find({
-      phoneNumber: { $in: phoneNumbers },
-    }).select("phoneNumber");
-    const existingPhoneNumbers = new Set(
-      existingUsers.map((user) => user.phoneNumber)
-    );
+    const phoneNumbers = usersData.map((u) => u.phoneNumber);
+    const existingUsers = await User.find({ phoneNumber: { $in: phoneNumbers } });
 
-    // Prepare bulk operations for new users
-    const operations = usersData
-      .filter((user) => !existingPhoneNumbers.has(user.phoneNumber))
-      .map((user) => ({
-        updateOne: {
-          filter: { phoneNumber: user.phoneNumber },
-          update: { $set: user },
-          upsert: true,
-        },
-      }));
+    // Map of existing users for faster lookup
+    const existingMap = {};
+    existingUsers.forEach((user) => {
+      existingMap[user.phoneNumber] = user;
+    });
 
-    if (operations.length === 0) {
-      return res
-        .status(200)
-        .json({ message: "All users already exist in the database." });
+    const bulkOps = [];
+
+    for (const incoming of usersData) {
+      const { phoneNumber, name } = incoming;
+
+      // If user exists
+      if (existingMap[phoneNumber]) {
+        const user = existingMap[phoneNumber];
+
+        // Avoid duplicate names in possibleNames
+        if (name && !user.possibleNames.includes(name)) {
+          bulkOps.push({
+            updateOne: {
+              filter: { phoneNumber },
+              update: { $addToSet: { possibleNames: name } }, // $addToSet avoids duplicates
+            },
+          });
+        }
+      } else {
+        // New user
+        const newUser = {
+          phoneNumber,
+          possibleNames: name ? [name] : [],
+        };
+
+        bulkOps.push({
+          updateOne: {
+            filter: { phoneNumber },
+            update: { $set: newUser },
+            upsert: true,
+          },
+        });
+      }
     }
 
-    // Execute bulk operations
-    const result = await User.bulkWrite(operations);
+    if (bulkOps.length === 0) {
+      return res.status(200).json({ message: "No new users or name suggestions to update." });
+    }
 
-    // Return success message
-    return res
-      .status(201)
-      .json({ message: "New users added successfully", result });
+    const result = await User.bulkWrite(bulkOps);
+    return res.status(201).json({ message: "Users updated successfully", result });
   } catch (error) {
-    return res
-      .status(500)
-      .json({ error: "Error adding users", details: error.message });
+    return res.status(500).json({ error: "Server error", details: error.message });
   }
 };
 
