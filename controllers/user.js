@@ -56,17 +56,92 @@ const signUp = async (req, res) => {
 };
 
 
+
+//get accurate name 
+const getWordMatchScore = (nameA, nameB) => {
+  const wordsA = nameA.toLowerCase().split(/\s+/); // Split by spaces
+  const wordsB = nameB.toLowerCase().split(/\s+/);
+  let score = 0;
+
+  // Check each word against every other word in the other name
+  for (const wordA of wordsA) {
+    for (const wordB of wordsB) {
+      let matchLength = 0;
+      for (let i = 0; i < Math.min(wordA.length, wordB.length); i++) {
+        if (wordA[i] === wordB[i]) {
+          matchLength++;
+        } else {
+          break;
+        }
+      }
+      score += matchLength; // Add the match length to the score
+    }
+  }
+  return score;
+};
+
+// Function to get the most similar names for a user
+const getMostSimilarName = (possibleNames) => {
+  if (!Array.isArray(possibleNames) || possibleNames.length === 0) return null;
+
+  const scores = {};
+
+  // Calculate score for each name against all others
+  for (let i = 0; i < possibleNames.length; i++) {
+    const nameA = possibleNames[i];
+    scores[nameA] = 0;
+
+    for (let j = 0; j < possibleNames.length; j++) {
+      if (i === j) continue;
+      const nameB = possibleNames[j];
+      scores[nameA] += getWordMatchScore(nameA, nameB);
+    }
+  }
+
+  // Find the maximum score to scale the accuracy to a percentage
+  const maxScore = Math.max(...Object.values(scores));
+
+  // Convert the raw scores to a percentage (0 to 100)
+  const accuracyPercentages = Object.entries(scores).map(([name, score]) => {
+    const percentage = (score / maxScore) * 100; // Scale to 100
+    return { name, accuracy: Math.round(percentage * 10) / 10 }; // Round to 1 decimal place
+  });
+
+  // Sort by accuracy percentage, highest first
+  accuracyPercentages.sort((a, b) => b.accuracy - a.accuracy);
+
+  return accuracyPercentages;
+};
+
 // Fetch user by phone number
 const getUserByPhoneNumber = async (req, res) => {
-  const { phoneNumber } = req.params;
   try {
+    const { phoneNumber } = req.params;
+
+    // Fetch user by phone number
     const user = await User.findOne({ phoneNumber });
-    if (!user) return res.status(404).json({ message: "User not found" });
-    res.status(200).json(user);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Get the possible names array, if empty use the user's name
+    const possibleNames = user.possibleNames.length > 0 ? user.possibleNames : [user.name];
+
+    // Get the most similar names
+    const mostSimilarNames = getMostSimilarName(possibleNames);
+
+    // Return the sorted names with accuracy percentages
+    return res.json({
+      message: "Names sorted by accuracy percentage",
+      data: mostSimilarNames
+    });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    return res.status(500).json({ message: "Server error", error: err.message });
   }
 };
+
+
 
 
 // Report fraud
