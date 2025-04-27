@@ -5,7 +5,7 @@ const messageSchema = new mongoose.Schema({
     body: String,
     timestamp: Date,
     isSpam: { type: Boolean, default: false },
-    reportedBy: [String], // Store user IDs who reported this message
+    reportedBy: [String], 
     reportCount: { type: Number, default: 0 },
     createdAt: { type: Date, default: Date.now }
   });

@@ -57,28 +57,6 @@ const signUp = async (req, res) => {
 
 
 
-//get accurate name 
-const getWordMatchScore = (nameA, nameB) => {
-  const wordsA = nameA.toLowerCase().split(/\s+/); // Split by spaces
-  const wordsB = nameB.toLowerCase().split(/\s+/);
-  let score = 0;
-
-  // Check each word against every other word in the other name
-  for (const wordA of wordsA) {
-    for (const wordB of wordsB) {
-      let matchLength = 0;
-      for (let i = 0; i < Math.min(wordA.length, wordB.length); i++) {
-        if (wordA[i] === wordB[i]) {
-          matchLength++;
-        } else {
-          break;
-        }
-      }
-      score += matchLength; // Add the match length to the score
-    }
-  }
-  return score;
-};
 
 // Helper to calculate similarity scores
 const getMostSimilarName = (possibleNames) => {
@@ -137,14 +115,14 @@ const getUserByPhoneNumber = async (req, res) => {
     const { phoneNumber } = req.params;
 
     function normalizePhone(phone) {
-      return phone.replace(/[^0-9]/g, ''); // Removes all non-numeric characters
+      return phone.replace(/[^0-9]/g, '');
     }
-    
-    const digits = normalizePhone(phoneNumber);  // Normalize input to remove any non-numeric characters
-    
-    // Perform the search using regex to match anywhere in the phone number
+
+    const digits = normalizePhone(phoneNumber);
+
+
     const user = await User.findOne({
-      phoneNumber: { $regex: digits, $options: 'i' }  // Search for digits anywhere in the phone number
+      phoneNumber: { $regex: digits, $options: 'i' }
     });
 
     if (!user) {
@@ -154,14 +132,14 @@ const getUserByPhoneNumber = async (req, res) => {
     const possibleNames = user.possibleNames.length > 0 ? user.possibleNames : [user.name];
     const mostSimilarNames = getMostSimilarName(possibleNames);
 
-   return res.json({
-  message: "Top similar names (max 10)",
-  phoneNumber: user.phoneNumber,
-  isSpam: user.isSpam,
-  name: mostSimilarNames[0]?.name || user.name,
-  mostSimilarNames: mostSimilarNames,
-      _id: user._id 
-});
+    return res.json({
+      message: "Top similar names (max 10)",
+      phoneNumber: user.phoneNumber,
+      isSpam: user.isSpam,
+      name: mostSimilarNames[0]?.name || user.name,
+      mostSimilarNames: mostSimilarNames,
+      _id: user._id
+    });
 
   } catch (err) {
     return res.status(500).json({ message: "Server error", error: err.message });
@@ -231,7 +209,7 @@ const addMultipleUsers = async (req, res) => {
           updateOne: {
             filter: { phoneNumber },
             update: {
-              $setOnInsert: { 
+              $setOnInsert: {
                 phoneNumber,
                 fraudCount: 0,
                 isSpam: false,
