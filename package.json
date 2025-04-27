@@ -16,7 +16,8 @@
     "firebase-admin": "^12.4.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.5.4",
-    "nodemon": "^3.1.4"
+    "nodemon": "^3.1.4",
+    "string-similarity": "^4.0.4"
   },
   "license": "ISC"
 }

@@ -3,11 +3,12 @@ const express = require("express");
 const cors= require('cors')
 const connectDB = require("./config/connect");
 const userRoutes = require("./routes/user");
- 
+const messageRoutes = require("./routes/message"); 
 const app = express();
 app.use(cors())
 app.use(express.json());
 app.use("/user", userRoutes);
+app.use("/message", messageRoutes);
 app.get("/",(req,res)=>{
   res.send({msg:"server is running"})
 })
