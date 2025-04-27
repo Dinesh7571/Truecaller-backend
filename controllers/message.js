@@ -4,7 +4,8 @@ const Message = require('../model/message');
 const checkSpamByAddress = (senderAddress, knownSpamSenders) => {
   let isSpam = false;
   let matchedSender = '';
-
+console.log('senderAddress', senderAddress)
+console.log('knownSpamSenders', knownSpamSenders)
   if (knownSpamSenders.includes(senderAddress.toLowerCase())) {
     isSpam = true;
     matchedSender = senderAddress;
@@ -24,8 +25,8 @@ const checkSpamSms = async (req, res) => {
     const results = [];
 
     // Fetch known spam addresses from database
-    const knownSpamAddresses = await Message.find({ isSpam: true })
-
+    const spamMessages = await Message.find({ isSpam: true })
+    const knownSpamAddresses =spamMessages.map(msg => msg.sender.toLowerCase());
     for (const msg of messages) {
       const { messageId,sender, timestamp } = msg;
 
