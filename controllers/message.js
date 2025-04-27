@@ -24,10 +24,10 @@ const checkSpamSms = async (req, res) => {
     const results = [];
 
     // Fetch known spam addresses from database
-    const knownSpamAddresses = await Message.find({ isSpam: true }).distinct('sender');
+    const knownSpamAddresses = await Message.find({ isSpam: true })
 
     for (const msg of messages) {
-      const { messageId, sender, timestamp } = msg;
+      const { messageId,sender, timestamp } = msg;
 
       if (!sender) {
         results.push({ success: false, error: 'Sender address is required' });
