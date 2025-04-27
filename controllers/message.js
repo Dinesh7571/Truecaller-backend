@@ -1,93 +1,99 @@
 const stringSimilarity = require('string-similarity');
 const Message = require('../model/message'); 
 
-
-
+// Helper function to check similarity with known spam messages
 const checkSpamBySimilarity = (messageBody, knownSpamMessages) => {
+  let isSpam = false;
+  let highestSimilarity = 0;
+  let matchedMessage = '';
+
+  // Compare the message with each known spam message using some similarity algorithm (e.g., cosine similarity, Jaccard index, etc.)
   for (const spamMessage of knownSpamMessages) {
-    const similarity = stringSimilarity.compareTwoStrings(messageBody.toLowerCase(), spamMessage.toLowerCase());
-    if (similarity >= 0.7) { // 70% similarity threshold
-      return { isSpam: true, similarity, matchedMessage: spamMessage };
+    const similarity = calculateSimilarity(messageBody, spamMessage);
+
+    if (similarity >= highestSimilarity) {
+      highestSimilarity = similarity;
+      matchedMessage = spamMessage;
     }
   }
-  return { isSpam: false, similarity: 0, matchedMessage: null };
+
+  if (highestSimilarity >= 0.80) {
+    isSpam = true;
+  }
+
+  return { isSpam, similarity: highestSimilarity, matchedMessage };
+};
+
+
+const calculateSimilarity = (messageBody, knownMessage) => {
+  const messageWords = messageBody.toLowerCase().split(' ');
+  const knownWords = knownMessage.toLowerCase().split(' ');
+
+  // Calculate Jaccard similarity (for simplicity, this can be improved)
+  const intersection = messageWords.filter(word => knownWords.includes(word)).length;
+  const union = new Set([...messageWords, ...knownWords]).size;
+
+  return intersection / union;
 };
 
 const checkSpamSms = async (req, res) => {
   try {
-    const messages = req.body.messages; // <-- expect an array now
-  
+    const messages = req.body.messages; // <-- Expect an array of messages from user's phone
+
     if (!Array.isArray(messages) || messages.length === 0) {
       return res.status(400).json({ success: false, message: 'Messages array is required' });
     }
-  
+
     const results = [];
-    const knownSpamMessages = ["Free money offer", "Click here to win", "Congratulations, you've won"]; // Example known spam messages
+
+    // Known spam messages from the database (you can replace this with a dynamic database fetch if required)
+    const knownSpamMessages = await messages.find({
+      isSpam: true,
+    }).then(messages => messages.map(msg => msg.body)); // Fetch known spam messages from your database
+ // Fetch known spam messages from your database
+   // Fetch known spam messages from your database
 
     for (const msg of messages) {
-      const { userId, messageBody, sender, timestamp, isReportingAsSpam } = msg;
-  
+      const { messageBody, sender, userId, timestamp, isReportingAsSpam } = msg;
+
       if (!messageBody) {
         results.push({ success: false, error: 'Message body is required' });
         continue;
       }
 
-      // No need to search by messageId, we are checking the content directly
-      let message = new Message({
-        sender,
-        body: messageBody,
-        timestamp: timestamp || new Date(),
-        isSpam: false,
-        reportedBy: [],
-        reportCount: 0
-      });
-  
-      const alreadyReported = message.reportedBy.includes(userId);
+      // Check similarity with known spam messages
+      const { isSpam, similarity, matchedMessage } = checkSpamBySimilarity(messageBody, knownSpamMessages);
 
-      // Check if similarity-based spam detection triggers
-      const { isSpam: isSimilarSpam, similarity, matchedMessage } = checkSpamBySimilarity(messageBody, knownSpamMessages);
-        
-      if (isSimilarSpam) {
-        message.isSpam = true;
+      if (isSpam && similarity >= 0.80) {
+        // If similarity is greater than 80%, mark it as spam
         results.push({
+          messageBody,
+          sender,
           success: true,
-          currentStatus: {
-            isSpam: message.isSpam,
-            reportCount: message.reportCount,
-          },
+          isSpam: true,
           similarity,
           matchedMessage,
         });
       } else {
-        if (!alreadyReported && userId) {
-          message.reportedBy.push(userId);
-          message.reportCount += 1;
-  
-          if (message.reportCount >= 10 && isReportingAsSpam) {
-            message.isSpam = true;
-          }
-  
-          await message.save();
-        }
-  
-        results.push({ 
-          success: true, 
-          currentStatus: {
-            isSpam: message.isSpam,
-            reportCount: message.reportCount
-          }
+        results.push({
+          messageBody,
+          sender,
+          success: true,
+          isSpam: false,
+          similarity,
+          matchedMessage: 'No matching spam message found',
         });
       }
     }
-  
+
+    // Send response back with results
     res.json({ success: true, results });
+
   } catch (error) {
-    console.error('Error reporting messages:', error);
+    console.error('Error checking messages:', error);
     res.status(500).json({ success: false, message: 'Server error' });
   }
 };
-
-
 
  const reportSms= async (req, res) => {
     try {
