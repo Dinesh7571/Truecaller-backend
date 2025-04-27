@@ -136,7 +136,16 @@ const getUserByPhoneNumber = async (req, res) => {
   try {
     const { phoneNumber } = req.params;
 
-    const user = await User.findOne({ phoneNumber });
+    function normalizePhone(phone) {
+      return phone.replace(/[^0-9]/g, ''); // Removes all non-numeric characters
+    }
+    
+    const digits = normalizePhone(phoneNumber);  // Normalize input to remove any non-numeric characters
+    
+    // Perform the search using regex to match anywhere in the phone number
+    const user = await User.findOne({
+      phoneNumber: { $regex: digits, $options: 'i' }  // Search for digits anywhere in the phone number
+    });
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
