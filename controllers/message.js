@@ -25,36 +25,31 @@ const checkSpamSms = async (req, res) => {
     const knownSpamMessages = ["Free money offer", "Click here to win", "Congratulations, you've won"]; // Example known spam messages
 
     for (const msg of messages) {
-      const { messageId, userId, messageBody, sender, timestamp, isReportingAsSpam } = msg;
+      const { userId, messageBody, sender, timestamp, isReportingAsSpam } = msg;
   
-      if (!messageId || !messageBody) {
-        results.push({ messageId, success: false, error: 'Message ID and body are required' });
+      if (!messageBody) {
+        results.push({ success: false, error: 'Message body is required' });
         continue;
       }
-  
-      let message = await Message.findOne({ messageId });
-  
-      if (!message) {
-        message = new Message({
-          messageId,
-          sender,
-          body: messageBody,
-          timestamp: timestamp || new Date(),
-          isSpam: false,
-          reportedBy: [],
-          reportCount: 0
-        });
-      }
+
+      // No need to search by messageId, we are checking the content directly
+      let message = new Message({
+        sender,
+        body: messageBody,
+        timestamp: timestamp || new Date(),
+        isSpam: false,
+        reportedBy: [],
+        reportCount: 0
+      });
   
       const alreadyReported = message.reportedBy.includes(userId);
-  
+
       // Check if similarity-based spam detection triggers
       const { isSpam: isSimilarSpam, similarity, matchedMessage } = checkSpamBySimilarity(messageBody, knownSpamMessages);
         
       if (isSimilarSpam) {
         message.isSpam = true;
         results.push({
-          messageId,
           success: true,
           currentStatus: {
             isSpam: message.isSpam,
@@ -76,7 +71,6 @@ const checkSpamSms = async (req, res) => {
         }
   
         results.push({ 
-          messageId, 
           success: true, 
           currentStatus: {
             isSpam: message.isSpam,
@@ -92,6 +86,7 @@ const checkSpamSms = async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error' });
   }
 };
+
 
 
  const reportSms= async (req, res) => {
