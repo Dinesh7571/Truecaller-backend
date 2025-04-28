@@ -234,10 +234,25 @@ const addMultipleUsers = async (req, res) => {
   }
 };
 
+
+const allSpamUsersByCountryCode = async (req, res) => {
+  const { countryCode } = req.params;
+  try {
+    const users = await User.find({ isSpam: true, phoneNumber: { $regex: `^${countryCode}` } }).select({ phoneNumber: 1, name: 1 });
+    if (users.length === 0) return res.status(404).json({ message: "No spam users found" });
+
+    res.status(200).json(users);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+}
+
+
 module.exports = {
   getUserByPhoneNumber,
   reportFraud,
   login,
   signUp,
   addMultipleUsers,
+  allSpamUsersByCountryCode
 };
