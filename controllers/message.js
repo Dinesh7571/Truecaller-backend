@@ -1,4 +1,4 @@
-const stringSimilarity = require('string-similarity');
+
 const Message = require('../model/message'); 
 
 const checkSpamByAddress = (senderAddress, knownSpamSenders) => {
