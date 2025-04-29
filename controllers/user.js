@@ -242,8 +242,8 @@ const allSpamUsersByCountryCode = async (req, res) => {
     const users = await User.find({ 
       isSpam: true, 
       phoneNumber: { $regex: `^${countryCode}` } 
-    }).select({ phoneNumber: 1, name: 1 });
-    
+    }).select({ phoneNumber: 1, name: 1, isSpam: 1 }); 
+
     if (users.length === 0) {
       return res.status(404).json({ success: false, message: "No spam users found" });
     }
