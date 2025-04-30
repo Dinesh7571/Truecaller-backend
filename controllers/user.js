@@ -13,16 +13,26 @@ const generateTokens = (userId) => {
   return { accessToken, refreshToken };
 };
 
-// Login
+
 const login = async (req, res) => {
   const { phoneNumber, deviceToken } = req.body;
+  console.log(phoneNumber, deviceToken);
+  
   try {
-    const user = await User.findOne({ phoneNumber });
+    
+    const user = await User.findOneAndUpdate(
+      { phoneNumber },
+      { deviceToken },
+      { 
+        new: true, 
+        runValidators: false // Explicitly disable validation
+      }
+    );
+    
     if (!user) return res.status(404).json({ message: "User not found" });
-    user.deviceToken = deviceToken;
-    await user.save();
+    
     const { accessToken, refreshToken } = generateTokens(user._id);
-
+    
     res.status(200).json({
       user,
       accessToken,
