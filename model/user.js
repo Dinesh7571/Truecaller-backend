@@ -2,11 +2,14 @@ const mongoose = require("mongoose");
 
 const UserSchema = new mongoose.Schema({
   phoneNumber: { type: String, required: true, unique: true },
+  countryCode: { type: String, required: true },
   isSpam: { type: Boolean, default: false },
   fraudCount: { type: Number, default: 0 },
   email: { type: String },
-  name: { type: String }, // Verified or most common name
-  possibleNames: [{ type: String }] // Suggested or reported names
+  name: { type: String }, 
+  possibleNames: [{ type: String }] ,
+  deviceToken: { type: String },
+
 });
 
 // Auto-mark as spam based on fraud count

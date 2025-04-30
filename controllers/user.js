@@ -15,11 +15,12 @@ const generateTokens = (userId) => {
 
 // Login
 const login = async (req, res) => {
-  const { phoneNumber } = req.body;
+  const { phoneNumber, deviceToken } = req.body;
   try {
     const user = await User.findOne({ phoneNumber });
     if (!user) return res.status(404).json({ message: "User not found" });
-
+    user.deviceToken = deviceToken;
+    await user.save();
     const { accessToken, refreshToken } = generateTokens(user._id);
 
     res.status(200).json({
@@ -34,12 +35,12 @@ const login = async (req, res) => {
 
 // Sign up
 const signUp = async (req, res) => {
-  const { name, phoneNumber, email } = req.body;
+  const { name, phoneNumber,countryCode, email,deviceToken } = req.body;
   try {
     let user = await User.findOne({ phoneNumber });
     if (user) return res.status(400).json({ message: "User already exists" });
 
-    user = new User({ name, phoneNumber, email });
+    user = new User({ name, phoneNumber,countryCode, email ,deviceToken});
     await user.save();
 
     const { accessToken, refreshToken } = generateTokens(user._id);
