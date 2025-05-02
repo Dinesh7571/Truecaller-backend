@@ -15,14 +15,14 @@ const generateTokens = (userId) => {
 
 
 const login = async (req, res) => {
-  const { phoneNumber, deviceToken } = req.body;
+  const { phoneNumber, deviceToken,countryCode } = req.body;
   console.log(phoneNumber, deviceToken);
   
   try {
     
     const user = await User.findOneAndUpdate(
       { phoneNumber },
-      { deviceToken },
+      { $set: { deviceToken, countryCode } },
       { 
         new: true, 
         runValidators: false // Explicitly disable validation
